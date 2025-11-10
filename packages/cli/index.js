@@ -14,13 +14,13 @@ cli
   .action(async (options, ctx) => {
     ctx.task('Init', async (ctx) => {
       ctx.task('Copy template files', async () => {
-        copyTemplate(process.cwd());
+        await copyTemplate(process.cwd());
       });
 
       ctx.task('Configure project', async (ctx) => {
         ctx.spawn('Clean package config', 'npm', ['pkg', 'delete', 'bin']);
         ctx.spawn('Set package name', 'npm', ['pkg', 'set', `name=${basename(process.cwd())}`]);
-        ctx.spawn('Move CLI dependency', 'npm', ['pkg', 'set', `devDependencies.@zypin-selenium/cli=$(npm pkg get dependencies.@zypin-selenium/cli | tr -d '"')`]);
+        ctx.spawn('Move CLI dependency', 'npm', ['pkg', 'set', 'devDependencies.@zypin-selenium/cli=$(npm pkg get dependencies.@zypin-selenium/cli | tr -d \'"\')']);
         ctx.spawn('Delete CLI from dependencies', 'npm', ['pkg', 'delete', 'dependencies.@zypin-selenium/cli']);
       });
 
@@ -28,7 +28,11 @@ cli
 
       ctx.task('Done', () => {
         ctx.title = 'Init completed';
-        ctx.output = 'Next: zypin generate';
+        ctx.output = [
+          'Next steps:',
+          '- npm run generate  # Generate test template',
+          '- npm run chat      # AI assistant'
+        ].join('\n');
       });
     });
   });
@@ -56,7 +60,7 @@ cli
       });
 
       ctx.task('Copy template', async (ctx) => {
-        const destDir = copyTestTemplate(selectedTemplate, process.cwd());
+        const destDir = await copyTestTemplate(selectedTemplate, process.cwd());
         ctx.output = destDir;
       });
 
@@ -64,7 +68,8 @@ cli
 
       ctx.task('Done', () => {
         ctx.title = 'Generate completed';
-        ctx.output = `Next: zypin test tests/${selectedTemplate}`;
+        const templateName = selectedTemplate.split('/').pop();
+        ctx.output = `Next: zypin test tests/${templateName}`;
       });
     });
   });
