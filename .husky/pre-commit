@@ -10,16 +10,21 @@ fi
 
 echo "🔍 Checking for package changes..."
 
-# Step 1: Bump only packages with changes
+# Step 1: Bump packages with changes or detect manual bumps
 bumped_packages=""
 for package_dir in packages/*; do
   if [ -d "$package_dir" ] && [ -f "$package_dir/package.json" ]; then
-    # Check if this package has changes (excluding package.json)
+    package_name=$(node -p "require('./$package_dir/package.json').name")
+
+    # Case 1: Has code changes (excluding package.json)
     if echo "$staged_files" | grep "^$package_dir/" | grep -v "package.json$" | grep -q .; then
-      package_name=$(node -p "require('./$package_dir/package.json').name")
       (cd "$package_dir" && npm version patch --no-git-tag-version)
       echo "📦 Bumped $package_name"
       git add "$package_dir/package.json"
+      bumped_packages="$bumped_packages $package_name"
+    # Case 2: package.json is staged (manual bump or previous auto-bump)
+    elif echo "$staged_files" | grep -q "^$package_dir/package.json$"; then
+      echo "📦 Detected staged package: $package_name"
       bumped_packages="$bumped_packages $package_name"
     fi
   fi
