@@ -1,9 +1,9 @@
 {
   "name": "@zypin-selenium/selenium-bdd",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "type": "module",
   "dependencies": {
     "@cucumber/cucumber": "^10.0.0",
-    "@zypin-selenium/selenium": "^0.1.1"
+    "@zypin-selenium/selenium": "^0.1.3"
   }
 }
