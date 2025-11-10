@@ -1,0 +1,91 @@
+#!/usr/bin/env sh
+
+# Get staged files
+staged_files=$(git diff --cached --name-only)
+
+# Check if any staged files are empty
+if [ -z "$staged_files" ]; then
+  exit 0
+fi
+
+echo "🔍 Checking for package changes..."
+
+# Step 1: Bump only packages with changes
+bumped_packages=""
+for package_dir in packages/*; do
+  if [ -d "$package_dir" ] && [ -f "$package_dir/package.json" ]; then
+    # Check if this package has changes (excluding package.json)
+    if echo "$staged_files" | grep "^$package_dir/" | grep -v "package.json$" | grep -q .; then
+      package_name=$(node -p "require('./$package_dir/package.json').name")
+      (cd "$package_dir" && npm version patch --no-git-tag-version)
+      echo "📦 Bumped $package_name"
+      git add "$package_dir/package.json"
+      bumped_packages="$bumped_packages $package_name"
+    fi
+  fi
+done
+
+if [ -n "$bumped_packages" ]; then
+  git add package-lock.json
+fi
+
+# Step 2: Sync templates with bumped packages
+if [ -n "$bumped_packages" ]; then
+  echo "🔄 Syncing template dependencies..."
+
+  for template_dir in templates/*; do
+    if [ -d "$template_dir" ] && [ -f "$template_dir/package.json" ]; then
+      template_updated=false
+
+      # Check each bumped package
+      for package_dir in packages/*; do
+        if [ -d "$package_dir" ] && [ -f "$package_dir/package.json" ]; then
+          package_name=$(node -p "require('./$package_dir/package.json').name")
+
+          # Check if this package was bumped
+          if echo "$bumped_packages" | grep -q "$package_name"; then
+            package_version=$(node -p "require('./$package_dir/package.json').version")
+
+            # Check if template depends on this package
+            has_dep=$(node -p "require('./$template_dir/package.json').dependencies?.['$package_name'] || 'none'")
+
+            if [ "$has_dep" != "none" ] && [ "$has_dep" != "undefined" ]; then
+              echo "  📝 Updating $template_dir: $package_name -> ^$package_version"
+              (cd "$template_dir" && npm pkg set dependencies.$package_name="^$package_version")
+              template_updated=true
+            fi
+          fi
+        fi
+      done
+
+      # Bump template if dependencies updated
+      if [ "$template_updated" = true ]; then
+        template_name=$(node -p "require('./$template_dir/package.json').name")
+        echo "📦 Bumped $template_name"
+        (cd "$template_dir" && npm version patch --no-git-tag-version)
+        git add "$template_dir/package.json"
+      fi
+    fi
+  done
+
+  git add package-lock.json
+fi
+
+# Step 3: Bump templates with direct file changes
+for template_dir in templates/*; do
+  if [ -d "$template_dir" ] && [ -f "$template_dir/package.json" ]; then
+    if echo "$staged_files" | grep "^$template_dir/" | grep -v "package.json$" | grep -q .; then
+      template_name=$(node -p "require('./$template_dir/package.json').name")
+      echo "📦 Bumped $template_name (file changes)"
+      (cd "$template_dir" && npm version patch --no-git-tag-version)
+      git add "$template_dir/package.json" package-lock.json
+    fi
+  fi
+done
+
+# Summary
+if [ -z "$bumped_packages" ] && ! echo "$staged_files" | grep "^templates/" | grep -v "package.json$" | grep -q .; then
+  echo "ℹ️  No package changes detected"
+else
+  echo "✅ Version bump completed"
+fi

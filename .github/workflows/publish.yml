@@ -1,0 +1,55 @@
+name: Auto Publish
+
+on:
+  push:
+    branches: [master]
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          registry-url: 'https://registry.npmjs.org'
+
+      - run: |
+          # Publish packages
+          for package_dir in packages/*; do
+            if [ -d "$package_dir" ] && [ -f "$package_dir/package.json" ]; then
+              if git diff HEAD~1 HEAD "$package_dir/package.json" | grep -q '^\+.*"version"'; then
+                echo "Publishing $package_dir..."
+                cd "$package_dir" && npm publish --access public && cd -
+              fi
+            fi
+          done
+
+          # Publish templates (dynamic scan)
+          for template_dir in templates/*; do
+            if [ -d "$template_dir" ] && [ -f "$template_dir/package.json" ]; then
+              if git diff HEAD~1 HEAD "$template_dir/package.json" | grep -q '^\+.*"version"'; then
+                echo "Publishing $template_dir..."
+                cd "$template_dir"
+
+                # Rename .gitignore for publishing
+                if [ -f ".gitignore" ]; then
+                  mv .gitignore gitignore
+                fi
+
+                npm publish --access public
+
+                # Restore .gitignore
+                if [ -f "gitignore" ]; then
+                  mv gitignore .gitignore
+                fi
+
+                cd -
+              fi
+            fi
+          done
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
