@@ -62,6 +62,30 @@
 4. `// Implementation` comment
 5. Implementations with `_` prefix
 
+### Constants Section
+- Place all constants after imports, before exports
+- Use UPPER_CASE for constants
+- Extract hardcoded lists/arrays to named constants
+- Makes values easy to find and edit
+
+```js
+// Constants
+const TEMPLATE_PACKAGES = [
+  '@zypin-selenium/selenium-basic',
+  '@zypin-selenium/selenium-bdd'
+];
+
+// Exports
+export const getTemplates = _getTemplates;
+
+// Implementation
+function _getTemplates() {
+  for (const pkg of TEMPLATE_PACKAGES) {
+    // ...
+  }
+}
+```
+
 ### Export Pattern
 ```js
 // Exports

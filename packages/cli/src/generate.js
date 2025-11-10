@@ -1,8 +1,14 @@
-import { copyFileSync, readdirSync, mkdirSync, existsSync, readFileSync } from 'fs';
-import { join, dirname } from 'path';
-import { fileURLToPath } from 'url';
+import { readdirSync, readFileSync } from 'fs';
+import { stat, cp, copyFile } from 'fs/promises';
+import { join, basename } from 'path';
+import { createRequire } from 'module';
 
-const __dirname = dirname(fileURLToPath(import.meta.url));
+const require = createRequire(import.meta.url);
+
+const TEMPLATE_PACKAGES = [
+  '@zypin-selenium/selenium-basic',
+  '@zypin-selenium/selenium-bdd'
+];
 
 export const getTemplates = _getTemplates;
 export const copyTestTemplate = _copyTestTemplate;
@@ -10,76 +16,66 @@ export const copyTestTemplate = _copyTestTemplate;
 // Implementation
 
 function _getTemplates() {
-  const templatesDir = join(__dirname, '../../templates');
-  const entries = readdirSync(templatesDir, { withFileTypes: true });
-
   const templates = [];
 
-  for (const entry of entries) {
-    if (!entry.isDirectory()) continue;
+  for (const packageName of TEMPLATE_PACKAGES) {
+    try {
+      const pkgPath = require.resolve(`${packageName}/package.json`);
+      const pkg = JSON.parse(readFileSync(pkgPath, 'utf-8'));
 
-    // Skip base template
-    if (entry.name === 'zypin') continue;
+      // Extract template name from package name
+      const name = packageName.split('/').pop();
 
-    const templatePath = join(templatesDir, entry.name);
-    const pkgPath = join(templatePath, 'package.json');
-
-    // Read package.json for better label
-    let label = entry.name;
-    if (existsSync(pkgPath)) {
-      try {
-        const pkg = JSON.parse(readFileSync(pkgPath, 'utf-8'));
-        // Create label from dependencies
-        if (pkg.dependencies?.['mocha']) {
-          label = `${entry.name} (Mocha)`;
-        } else if (pkg.dependencies?.['@cucumber/cucumber']) {
-          label = `${entry.name} (Cucumber/BDD)`;
-        } else if (pkg.dependencies?.['jest']) {
-          label = `${entry.name} (Jest)`;
-        }
-      } catch (err) {
-        // Ignore, use default label
+      // Create label from dependencies
+      let label = name;
+      if (pkg.dependencies?.['mocha']) {
+        label = `${name} (Mocha)`;
+      } else if (pkg.dependencies?.['@cucumber/cucumber']) {
+        label = `${name} (Cucumber/BDD)`;
+      } else if (pkg.dependencies?.['jest']) {
+        label = `${name} (Jest)`;
       }
-    }
 
-    templates.push({
-      name: entry.name,
-      label,
-      value: entry.name
-    });
+      templates.push({
+        name: packageName,
+        label,
+        value: packageName
+      });
+    } catch (err) {
+      // Package not installed, skip
+    }
   }
 
   return templates;
 }
 
-function _copyTestTemplate(templateName, targetDir) {
-  const templateDir = join(__dirname, '../../templates', templateName);
+async function _copyTestTemplate(templatePackage, targetDir) {
+  const files = await _scanTemplate(templatePackage);
+  const templateName = templatePackage.split('/').pop();
   const destDir = join(targetDir, 'tests', templateName);
 
-  if (!existsSync(templateDir)) {
-    throw new Error(`Template not found: ${templateName}`);
+  for (const file of files) {
+    await _copy(file, destDir);
   }
-
-  _copyRecursive(templateDir, destDir);
 
   return destDir;
 }
 
-function _copyRecursive(src, dest) {
-  if (!existsSync(dest)) {
-    mkdirSync(dest, { recursive: true });
-  }
+async function _scanTemplate(packageName) {
+  const packageJsonPath = require.resolve(`${packageName}/package.json`);
+  const templatePath = join(packageJsonPath, '..');
 
-  const entries = readdirSync(src, { withFileTypes: true });
+  return readdirSync(templatePath)
+    .filter(file => file !== 'node_modules')
+    .map(file => join(templatePath, file));
+}
 
-  for (const entry of entries) {
-    const srcPath = join(src, entry.name);
-    const destPath = join(dest, entry.name);
+async function _copy(sourcePath, targetDir) {
+  const targetPath = join(targetDir, basename(sourcePath));
 
-    if (entry.isDirectory()) {
-      _copyRecursive(srcPath, destPath);
-    } else {
-      copyFileSync(srcPath, destPath);
-    }
+  if ((await stat(sourcePath)).isDirectory()) {
+    await cp(sourcePath, targetPath, { recursive: true });
+  } else {
+    await copyFile(sourcePath, targetPath);
   }
 }
