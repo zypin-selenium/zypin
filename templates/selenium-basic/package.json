@@ -1,6 +1,6 @@
 {
   "name": "@zypin-selenium/selenium-basic",
-  "version": "0.1.3",
+  "version": "0.1.4",
   "type": "module",
   "dependencies": {
     "@zypin-selenium/selenium": "^0.1.1",
