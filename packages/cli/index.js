@@ -205,7 +205,7 @@ cli
     });
 
     // Keep running (spawn keeps processes alive)
-    await new Promise(() => {});
+    await new Promise(() => { });
   });
 
 cli
