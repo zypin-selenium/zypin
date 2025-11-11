@@ -1,7 +1,7 @@
 import { Builder } from 'selenium-webdriver';
 import chrome from 'selenium-webdriver/chrome.js';
-import firefox from 'selenium-webdriver/firefox.js';
 import edge from 'selenium-webdriver/edge.js';
+import firefox from 'selenium-webdriver/firefox.js';
 
 export const createBrowser = _createBrowser;
 
@@ -28,23 +28,26 @@ async function _createBrowser(options = {}) {
 
   if (headless) {
     switch (browserLower) {
-      case 'chrome':
+      case 'chrome': {
         const chromeOptions = new chrome.Options();
         chromeOptions.addArguments('--headless=new');
         builder = builder.setChromeOptions(chromeOptions);
         break;
+      }
 
-      case 'firefox':
+      case 'firefox': {
         const firefoxOptions = new firefox.Options();
         firefoxOptions.addArguments('-headless');
         builder = builder.setFirefoxOptions(firefoxOptions);
         break;
+      }
 
-      case 'edge':
+      case 'edge': {
         const edgeOptions = new edge.Options();
         edgeOptions.addArguments('--headless=new');
         builder = builder.setEdgeOptions(edgeOptions);
         break;
+      }
 
       case 'safari':
         console.warn('Safari does not support headless mode. Running in normal mode.');

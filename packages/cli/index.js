@@ -1,11 +1,11 @@
 #!/usr/bin/env node
 
-import { CLI } from './src/cli.js';
-import { copyTemplate } from './src/init.js';
-import { getTemplates, copyTestTemplate } from './src/generate.js';
-import { detectTest } from './src/test.js';
-import { checkJava, downloadSeleniumServer } from './src/server.js';
 import { basename } from 'path';
+import { CLI } from './src/cli.js';
+import { getTemplates, copyTestTemplate } from './src/generate.js';
+import { copyTemplate } from './src/init.js';
+import { checkJava, downloadSeleniumServer } from './src/server.js';
+import { detectTest } from './src/test.js';
 
 const cli = new CLI('zypin', 'Zypin Testing Framework', '0.1.0');
 
