@@ -1,3 +1,1 @@
-import { createConfig } from './packages/linter/index.js';
-
-export default createConfig();
+export default (await import('./packages/linter/index.js')).createConfig();
