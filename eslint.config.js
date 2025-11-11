@@ -1,3 +1,3 @@
-import { createConfig } from './packages/eslint-config-standards/index.js';
+import { createConfig } from './packages/linter/index.js';
 
 export default createConfig();

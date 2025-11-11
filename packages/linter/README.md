@@ -1,4 +1,4 @@
-# @zypin/eslint-config-standards
+# @zypin-selenium/linter
 
 Shared ESLint configuration with custom rules for enforcing coding standards.
 
@@ -14,7 +14,7 @@ Shared ESLint configuration with custom rules for enforcing coding standards.
 ## Installation
 
 ```bash
-npm install @zypin/eslint-config-standards --save-dev
+npm install @zypin-selenium/linter --save-dev
 ```
 
 ## Usage
@@ -24,7 +24,7 @@ npm install @zypin/eslint-config-standards --save-dev
 Create `eslint.config.js`:
 
 ```javascript
-import { createConfig } from '@zypin/eslint-config-standards';
+import { createConfig } from '@zypin-selenium/linter';
 
 export default createConfig();
 ```
@@ -32,7 +32,7 @@ export default createConfig();
 ### Custom Ignores
 
 ```javascript
-import { createConfig } from '@zypin/eslint-config-standards';
+import { createConfig } from '@zypin-selenium/linter';
 
 export default createConfig({
   ignores: ['node_modules/**', 'dist/**', 'custom-ignore/**']
