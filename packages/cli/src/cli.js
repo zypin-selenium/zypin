@@ -186,7 +186,7 @@ function _spawn(command, args, options = {}) {
   });
 }
 
-const _createTask = (title, fn, options, concurrent) => {
+function _createTask(title, fn, options, concurrent) {
   return {
     title,
     task: async (_, listrTask) => {
@@ -201,7 +201,7 @@ const _createTask = (title, fn, options, concurrent) => {
   };
 }
 
-const _resolveCommand = (command) => {
+function _resolveCommand(command) {
   if (['npm', 'node', 'npx'].includes(command)) return [command, []];
 
   const localBin = join(process.cwd(), 'node_modules', '.bin', command);
