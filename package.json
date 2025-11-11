@@ -7,12 +7,11 @@
     "packages/*"
   ],
   "devDependencies": {
-    "eslint": "^9.39.1",
     "husky": "^9.1.7"
   },
   "scripts": {
     "prepare": "husky",
-    "lint": "eslint . --ext .js",
-    "lint:fix": "eslint . --ext .js --fix"
+    "lint": "npx -w @zypin-selenium/linter eslint . --ext .js",
+    "lint:fix": "npx -w @zypin-selenium/linter eslint . --ext .js --fix"
   }
 }

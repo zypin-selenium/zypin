@@ -1,1 +1,1 @@
-export default (await import('./packages/linter/index.js')).createConfig();
+export { default } from './packages/linter/eslint.config.js';
