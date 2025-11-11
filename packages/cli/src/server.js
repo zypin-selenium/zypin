@@ -1,9 +1,9 @@
+import { exec } from 'child_process';
+import { existsSync, mkdirSync, createWriteStream } from 'fs';
 import { homedir } from 'os';
 import { join } from 'path';
-import { existsSync, mkdirSync, createWriteStream } from 'fs';
-import { exec } from 'child_process';
-import { promisify } from 'util';
 import { pipeline } from 'stream/promises';
+import { promisify } from 'util';
 
 const execPromise = promisify(exec);
 
@@ -26,7 +26,7 @@ async function _checkJava() {
   try {
     await execPromise('java -version');
     return true;
-  } catch (error) {
+  } catch (_error) {
     throw new Error('Java is required. Please install Java 11+ from https://adoptium.net/');
   }
 }

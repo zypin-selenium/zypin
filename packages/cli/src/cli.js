@@ -1,10 +1,10 @@
 import { spawn as nodeSpawn } from 'child_process';
 import { existsSync } from 'fs';
 import { join } from 'path';
+import { select, input } from '@inquirer/prompts';
+import { ListrInquirerPromptAdapter } from '@listr2/prompt-adapter-inquirer';
 import { Command } from 'commander';
 import { Listr } from 'listr2';
-import { ListrInquirerPromptAdapter } from '@listr2/prompt-adapter-inquirer';
-import { select, input } from '@inquirer/prompts';
 
 const activeProcesses = new Set();
 

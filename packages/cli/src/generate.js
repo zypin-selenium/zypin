@@ -1,7 +1,7 @@
 import { readdirSync, readFileSync } from 'fs';
 import { stat, cp, copyFile } from 'fs/promises';
-import { join, basename } from 'path';
 import { createRequire } from 'module';
+import { join, basename } from 'path';
 
 const require = createRequire(import.meta.url);
 
@@ -41,7 +41,7 @@ function _getTemplates() {
         name: packageName,
         value: packageName,
       });
-    } catch (err) {
+    } catch (_err) {
       // Package not installed, skip
     }
   }

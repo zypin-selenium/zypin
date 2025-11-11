@@ -8,6 +8,31 @@ if [ -z "$staged_files" ]; then
   exit 0
 fi
 
+# Lint and format staged files
+echo "🎨 Running linter and formatter..."
+
+# Get staged JS files (excluding templates and node_modules)
+staged_js_files=$(echo "$staged_files" | grep '\.js$' | grep -v '^templates/' | grep -v 'node_modules')
+
+if [ -n "$staged_js_files" ]; then
+  # Format with Prettier
+  echo "$staged_js_files" | xargs npx prettier --write
+
+  # Lint with ESLint (auto-fix)
+  echo "$staged_js_files" | xargs npx eslint --fix
+
+  # Add fixed files back to staging
+  echo "$staged_js_files" | xargs git add
+
+  # Check if there are still linting errors
+  if ! echo "$staged_js_files" | xargs npx eslint; then
+    echo "❌ ESLint found errors that cannot be auto-fixed. Please fix them manually."
+    exit 1
+  fi
+
+  echo "✅ Linting and formatting completed"
+fi
+
 echo "🔍 Checking for package changes..."
 
 # Step 1: Bump packages with changes or detect manual bumps
