@@ -7,7 +7,7 @@ const require = createRequire(import.meta.url);
 
 const TEMPLATE_PACKAGES = [
   '@zypin-selenium/selenium-basic',
-  '@zypin-selenium/selenium-bdd'
+  '@zypin-selenium/selenium-bdd',
 ];
 
 export const getTemplates = _getTemplates;
@@ -37,9 +37,9 @@ function _getTemplates() {
       }
 
       templates.push({
-        name: packageName,
         label,
-        value: packageName
+        name: packageName,
+        value: packageName,
       });
     } catch (err) {
       // Package not installed, skip

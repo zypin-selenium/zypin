@@ -18,8 +18,8 @@ function _detectTest(targetPath) {
 
   return {
     runner,
+    pkg,
     testDir: dirname(pkgPath),
-    pkg
   };
 }
 
@@ -47,9 +47,15 @@ function _findPackageJson(startPath) {
 }
 
 function _detectRunner(pkg) {
-  if (pkg.dependencies?.['@cucumber/cucumber']) return 'cucumber';
-  if (pkg.dependencies?.['mocha']) return 'mocha';
-  if (pkg.dependencies?.['jest']) return 'jest';
+  if (pkg.dependencies?.['@cucumber/cucumber']) {
+    return 'cucumber';
+  }
+  if (pkg.dependencies?.['mocha']) {
+    return 'mocha';
+  }
+  if (pkg.dependencies?.['jest']) {
+    return 'jest';
+  }
 
   throw new Error('Unknown test framework. Please install mocha, @cucumber/cucumber, or jest.');
 }

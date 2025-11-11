@@ -8,7 +8,7 @@ class CustomWorld {
 
 setWorldConstructor(CustomWorld);
 
-After(async function() {
+After(async function () {
   if (this.browser) {
     await this.browser.close();
   }

@@ -46,7 +46,9 @@ async function _downloadSeleniumServer() {
   const url = 'https://github.com/SeleniumHQ/selenium/releases/download/selenium-4.38.0/selenium-server-4.38.0.jar';
 
   const response = await fetch(url);
-  if (!response.ok) throw new Error(`Download failed: ${response.statusText}`);
+  if (!response.ok) {
+    throw new Error(`Download failed: ${response.statusText}`);
+  }
 
   const fileStream = createWriteStream(jarPath);
   await pipeline(response.body, fileStream);

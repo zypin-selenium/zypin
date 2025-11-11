@@ -11,13 +11,13 @@ const cli = new CLI('zypin', 'Zypin Testing Framework', '0.1.0');
 
 cli
   .command('init', 'Initialize a new Zypin project')
-  .action(async (options, ctx) => {
-    ctx.task('Init', async (ctx) => {
+  .action(async (_, ctx) => {
+    ctx.task('Init', async ctx => {
       ctx.task('Copy template files', async () => {
         await copyTemplate(process.cwd());
       });
 
-      ctx.task('Configure project', async (ctx) => {
+      ctx.task('Configure project', async ctx => {
         ctx.spawn('Clean package config', 'npm', ['pkg', 'delete', 'bin']);
         ctx.spawn('Set package name', 'npm', ['pkg', 'set', `name=${basename(process.cwd())}`]);
         ctx.spawn('Move CLI dependency', 'npm', ['pkg', 'set', 'devDependencies.@zypin-selenium/cli=$(npm pkg get dependencies.@zypin-selenium/cli | tr -d \'"\')'], { shell: true });
@@ -31,7 +31,7 @@ cli
         ctx.output = [
           'Next steps:',
           '- npm run generate  # Generate test template',
-          '- npm run chat      # AI assistant'
+          '- npm run chat      # AI assistant',
         ].join('\n');
       });
     });
@@ -39,11 +39,11 @@ cli
 
 cli
   .command('generate', 'Generate test template')
-  .action(async (options, ctx) => {
+  .action(async (_, ctx) => {
     let selectedTemplate = '';
 
-    ctx.task('Generate', async (ctx) => {
-      ctx.task('Select template', async (ctx) => {
+    ctx.task('Generate', async ctx => {
+      ctx.task('Select template', async ctx => {
         const templates = getTemplates();
 
         if (templates.length === 0) {
@@ -54,12 +54,12 @@ cli
           message: 'Select test template',
           choices: templates.map(t => ({
             name: t.label,
-            value: t.value
-          }))
+            value: t.value,
+          })),
         });
       });
 
-      ctx.task('Copy template', async (ctx) => {
+      ctx.task('Copy template', async ctx => {
         const destDir = await copyTestTemplate(selectedTemplate, process.cwd());
         ctx.output = destDir;
       });
@@ -82,15 +82,15 @@ cli
     let testInfo;
     let jarPath;
 
-    ctx.task('Run Tests', async (ctx) => {
+    ctx.task('Run Tests', async ctx => {
       if (!options.remote) {
         // Local mode - manage server
-        ctx.task('Setup Selenium Server', async (ctx) => {
+        ctx.task('Setup Selenium Server', async ctx => {
           ctx.task('Check Java', async () => {
             await checkJava();
           });
 
-          ctx.task('Download Selenium Server', async (ctx) => {
+          ctx.task('Download Selenium Server', async ctx => {
             jarPath = await downloadSeleniumServer();
             ctx.output = jarPath;
           });
@@ -99,13 +99,13 @@ cli
             '-jar', jarPath,
             'standalone',
             '--port', '8444',
-            '--selenium-manager', 'true'
+            '--selenium-manager', 'true',
           ], {
             onLine(line, { resolve }) {
               if (line.includes('Selenium Server is up and running')) {
                 resolve();
               }
-            }
+            },
           });
         });
       } else {
@@ -113,31 +113,32 @@ cli
         process.env.SELENIUM_SERVER_URL = options.remote;
       }
 
-      ctx.task('Detect test type', async (ctx) => {
+      ctx.task('Detect test type', async ctx => {
         testInfo = detectTest(targetPath);
         ctx.output = `Found: ${testInfo.runner}`;
       });
 
-      ctx.task('Run tests', async (ctx) => {
+      ctx.task('Run tests', async ctx => {
         const files = options.args.slice(1);
 
         switch (testInfo.runner) {
-          case 'mocha':
+          case 'mocha': {
             const mochaArgs = files.length > 0 ? files : ['*.test.js'];
             ctx.spawn('Execute Mocha', 'mocha', [...mochaArgs, '--timeout', '30000'], {
-              cwd: testInfo.testDir
+              cwd: testInfo.testDir,
             });
             break;
+          }
 
           case 'cucumber':
             ctx.spawn('Execute Cucumber', 'cucumber-js', files, {
-              cwd: testInfo.testDir
+              cwd: testInfo.testDir,
             });
             break;
 
           case 'jest':
             ctx.spawn('Execute Jest', 'jest', files, {
-              cwd: testInfo.testDir
+              cwd: testInfo.testDir,
             });
             break;
 
@@ -150,32 +151,32 @@ cli
 
 cli
   .command('server', 'Start Selenium server with tunnel')
-  .action(async (options, ctx) => {
+  .action(async (_, ctx) => {
     let jarPath;
     let tunnelUrl = '';
 
-    ctx.task('Server', async (ctx) => {
+    ctx.task('Server', async ctx => {
       ctx.task('Check Java', async () => {
         await checkJava();
       });
 
-      ctx.task('Download Selenium Server', async (ctx) => {
+      ctx.task('Download Selenium Server', async ctx => {
         jarPath = await downloadSeleniumServer();
         ctx.output = jarPath;
       });
 
-      ctx.parallel('Start Services', async (ctx) => {
+      ctx.parallel('Start Services', async ctx => {
         ctx.spawn('Start Selenium Server', 'java', [
           '-jar', jarPath,
           'standalone',
           '--port', '8444',
-          '--selenium-manager', 'true'
+          '--selenium-manager', 'true',
         ], {
           onLine(line, { resolve }) {
             if (line.includes('Selenium Server is up and running')) {
               resolve();
             }
-          }
+          },
         });
 
         ctx.spawn('Create Tunnel', 'npx', [
@@ -183,7 +184,7 @@ cli
           'cloudflared',
           'tunnel',
           '--url',
-          'http://localhost:8444'
+          'http://localhost:8444',
         ], {
           onLine(line, { resolve }) {
             const match = line.match(/(https:\/\/[^\s]+\.trycloudflare\.com)/);
@@ -194,7 +195,7 @@ cli
             if (line.includes('ERR') && line.includes('429')) {
               throw new Error('Cloudflare rate limit. Try again later.');
             }
-          }
+          },
         });
       });
 
@@ -210,11 +211,11 @@ cli
 
 cli
   .command('chat', 'Chat with AI assistant')
-  .action(async (options, ctx) => {
+  .action(async (_, ctx) => {
     ctx.spawn('Gemini AI', 'npx', [
-      'https://github.com/google-gemini/gemini-cli'
+      'https://github.com/google-gemini/gemini-cli',
     ], {
-      stdio: 'inherit'
+      stdio: 'inherit',
     });
   });
 

@@ -39,7 +39,7 @@ class CommandBuilder {
   }
 
   action(fn) {
-    this.cmd.action(async (options) => {
+    this.cmd.action(async options => {
       const ctx = new TaskContext();
       await fn(options, ctx);
       if (ctx.subtasks.length > 0) {
@@ -61,7 +61,9 @@ class TaskContext {
   }
 
   set title(value) {
-    if (this.listrTask) this.listrTask.title = value;
+    if (this.listrTask) {
+      this.listrTask.title = value;
+    }
   }
 
   get output() {
@@ -69,7 +71,9 @@ class TaskContext {
   }
 
   set output(value) {
-    if (this.listrTask) this.listrTask.output = value;
+    if (this.listrTask) {
+      this.listrTask.output = value;
+    }
   }
 
   task(title, fn, options = {}) {
@@ -83,8 +87,8 @@ class TaskContext {
   spawn(title, command, args, options = {}) {
     const { skip, enabled, onLine, ...spawnOptions } = options;
 
-    this.task(title, (task) => {
-      const defaultOnLine = onLine || ((line) => {
+    this.task(title, task => {
+      const defaultOnLine = onLine || (line => {
         task.output = line;
       });
 
@@ -101,7 +105,9 @@ class TaskContext {
   }
 
   async prompt(promptFn, options) {
-    if (!this.listrTask) throw new Error('prompt() can only be called within a task');
+    if (!this.listrTask) {
+      throw new Error('prompt() can only be called within a task');
+    }
     return this.listrTask.prompt(ListrInquirerPromptAdapter).run(promptFn, options);
   }
 }
@@ -112,29 +118,29 @@ function _spawn(command, args, options = {}) {
     const [cmd, extraArgs] = _resolveCommand(command);
     const child = nodeSpawn(cmd, [...extraArgs, ...args], {
       stdio: onLine ? ['inherit', 'pipe', 'pipe'] : 'inherit',
-      ...spawnOptions
+      ...spawnOptions,
     });
 
     activeProcesses.add(child);
 
     let resolved = false;
     const controls = {
-      resolve: (value) => {
+      resolve: value => {
         if (!resolved) {
           resolved = true;
           resolve(value);
         }
       },
-      reject: (err) => {
+      reject: err => {
         if (!resolved) {
           resolved = true;
           reject(err);
         }
-      }
+      },
     };
 
     if (onLine) {
-      const handleStream = (stream) => {
+      const handleStream = stream => {
         let buffer = '';
 
         const flushBuffer = () => {
@@ -148,18 +154,18 @@ function _spawn(command, args, options = {}) {
           }
         };
 
-        stream.on('data', (data) => {
+        stream.on('data', data => {
           buffer += data.toString();
           const lines = buffer.split(/\r?\n/);
           buffer = lines.pop() || '';
 
-          lines.forEach(line => {
+          for (const line of lines) {
             try {
               onLine(line, controls);
             } catch (err) {
               controls.reject(err);
             }
-          });
+          }
         });
 
         stream.on('end', flushBuffer);
@@ -172,16 +178,18 @@ function _spawn(command, args, options = {}) {
 
     const cleanup = () => activeProcesses.delete(child);
 
-    child.on('close', (code) => {
+    child.on('close', code => {
       cleanup();
       if (!resolved) {
         code === 0 ? resolve() : reject(new Error(`${command} ${args.join(' ')} failed with code ${code}`));
       }
     });
 
-    child.on('error', (err) => {
+    child.on('error', err => {
       cleanup();
-      if (!resolved) reject(err);
+      if (!resolved) {
+        reject(err);
+      }
     });
   });
 }
@@ -197,12 +205,14 @@ function _createTask(title, fn, options, concurrent) {
         : undefined;
     },
     rendererOptions: { outputBar: Infinity, persistentOutput: true },
-    ...options
+    ...options,
   };
 }
 
 function _resolveCommand(command) {
-  if (['npm', 'node', 'npx'].includes(command)) return [command, []];
+  if (['npm', 'node', 'npx'].includes(command)) {
+    return [command, []];
+  }
 
   const localBin = join(process.cwd(), 'node_modules', '.bin', command);
   const binPath = process.platform === 'win32' ? `${localBin}.cmd` : localBin;
@@ -210,6 +220,10 @@ function _resolveCommand(command) {
   return existsSync(binPath) ? [binPath, []] : ['npx', ['--yes', command]];
 }
 
-['SIGINT', 'SIGTERM'].forEach(signal => {
-  process.on(signal, () => activeProcesses.forEach(child => child.kill(signal)));
-});
+for (const signal of ['SIGINT', 'SIGTERM']) {
+  process.on(signal, () => {
+    for (const child of activeProcesses) {
+      child.kill(signal);
+    }
+  });
+}
