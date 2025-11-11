@@ -71,6 +71,18 @@ export default {
           });
         }
 
+        // Catch: export function name() {} - NOT ALLOWED!
+        if (node.declaration?.type === 'FunctionDeclaration') {
+          const funcName = node.declaration.id?.name;
+          if (funcName) {
+            context.report({
+              node: node.declaration,
+              messageId: 'invalidExportPattern',
+              data: { name: funcName },
+            });
+          }
+        }
+
         // Allow: export { Class }
         if (node.specifiers?.length > 0 && !node.declaration) {
           // This is okay - class or re-export

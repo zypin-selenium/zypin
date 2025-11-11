@@ -30,8 +30,8 @@ export default {
     const tokens = sourceCode.ast.body;
 
     let lastImportIndex = -1;
-    let firstConstantIndex = -1;
-    let firstExportIndex = -1;
+    const constantIndices = [];
+    const exportIndices = [];
     let implementationCommentIndex = -1;
     let firstImplementationIndex = -1;
 
@@ -44,27 +44,27 @@ export default {
         node.declarations[0]?.id?.name &&
         /^[A-Z_]+$/.test(node.declarations[0].id.name)
       ) {
-        if (firstConstantIndex === -1) firstConstantIndex = index;
+        constantIndices.push(index);
       } else if (node.type === 'ExportNamedDeclaration' && !node.declaration) {
-        if (firstExportIndex === -1) firstExportIndex = index;
+        exportIndices.push(index);
       } else if (
         node.type === 'FunctionDeclaration' &&
         node.id?.name?.startsWith('_')
       ) {
         if (firstImplementationIndex === -1) firstImplementationIndex = index;
       } else if (node.type === 'ExportDefaultDeclaration') {
-        if (firstExportIndex === -1) firstExportIndex = index;
+        exportIndices.push(index);
       } else if (node.type === 'ExportAllDeclaration') {
-        if (firstExportIndex === -1) firstExportIndex = index;
+        exportIndices.push(index);
       }
     });
 
     // Check for // Implementation comment
     const comments = sourceCode.getAllComments();
-    comments.forEach((comment, index) => {
+    comments.forEach((_comment, index) => {
       if (
-        comment.type === 'Line' &&
-        comment.value.trim() === 'Implementation'
+        _comment.type === 'Line' &&
+        _comment.value.trim() === 'Implementation'
       ) {
         implementationCommentIndex = index;
       }
@@ -88,24 +88,38 @@ export default {
           });
         }
 
-        // Check constants after imports
-        if (firstConstantIndex > -1 && lastImportIndex > -1) {
-          if (firstConstantIndex < lastImportIndex) {
-            context.report({
-              node: tokens[firstConstantIndex],
-              messageId: 'constantsAfterImports',
-            });
-          }
+        // Check ALL constants are after imports and before exports
+        if (constantIndices.length > 0) {
+          const firstExportIndex = exportIndices.length > 0 ? Math.min(...exportIndices) : Infinity;
+
+          constantIndices.forEach(constIndex => {
+            // Constant must be after last import
+            if (lastImportIndex > -1 && constIndex < lastImportIndex) {
+              context.report({
+                node: tokens[constIndex],
+                messageId: 'constantsAfterImports',
+              });
+            }
+            // Constant must be before first export
+            if (constIndex > firstExportIndex) {
+              context.report({
+                node: tokens[constIndex],
+                messageId: 'constantsAfterImports',
+              });
+            }
+          });
         }
 
-        // Check exports before implementation
-        if (firstExportIndex > -1 && firstImplementationIndex > -1) {
-          if (firstExportIndex > firstImplementationIndex) {
-            context.report({
-              node: tokens[firstExportIndex],
-              messageId: 'exportsBeforeImplementation',
-            });
-          }
+        // Check ALL exports are before implementation
+        if (exportIndices.length > 0 && firstImplementationIndex > -1) {
+          exportIndices.forEach(exportIndex => {
+            if (exportIndex > firstImplementationIndex) {
+              context.report({
+                node: tokens[exportIndex],
+                messageId: 'exportsBeforeImplementation',
+              });
+            }
+          });
         }
 
         // Check implementation comment exists if there are implementation functions
