@@ -8,27 +8,19 @@ if [ -z "$staged_files" ]; then
   exit 0
 fi
 
-# Lint staged files
+# Lint all files
 echo "🔍 Running linter..."
 
-# Get staged JS files (excluding templates and node_modules)
-staged_js_files=$(echo "$staged_files" | grep '\.js$' | grep -v '^templates/' | grep -v 'node_modules')
+# Run linter with auto-fix
+npm run lint:fix
 
-if [ -n "$staged_js_files" ]; then
-  # Lint with ESLint (auto-fix)
-  echo "$staged_js_files" | xargs npx eslint --fix
-
-  # Add fixed files back to staging
-  echo "$staged_js_files" | xargs git add
-
-  # Check if there are still linting errors
-  if ! echo "$staged_js_files" | xargs npx eslint; then
-    echo "❌ ESLint found errors that cannot be auto-fixed. Please fix them manually."
-    exit 1
-  fi
-
-  echo "✅ Linting completed"
+# Check if there are still linting errors
+if ! npm run lint; then
+  echo "❌ ESLint found errors that cannot be auto-fixed. Please fix them manually."
+  exit 1
 fi
+
+echo "✅ Linting completed"
 
 echo "🔍 Checking for package changes..."
 
