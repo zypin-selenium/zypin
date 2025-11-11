@@ -1,0 +1,26 @@
+{
+  "name": "@zypin/eslint-config-standards",
+  "version": "0.1.0",
+  "description": "Shared ESLint config with custom rules for coding standards enforcement",
+  "type": "module",
+  "main": "index.js",
+  "exports": {
+    ".": "./index.js",
+    "./plugin": "./plugin/index.js"
+  },
+  "keywords": [
+    "eslint",
+    "eslint-config",
+    "eslint-plugin",
+    "coding-standards",
+    "linter"
+  ],
+  "peerDependencies": {
+    "eslint": "^9.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/zypin-selenium/zypin",
+    "directory": "packages/eslint-config-standards"
+  }
+}
