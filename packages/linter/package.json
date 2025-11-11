@@ -1,5 +1,5 @@
 {
-  "name": "@zypin/eslint-config-standards",
+  "name": "@zypin-selenium/linter",
   "version": "0.1.0",
   "description": "Shared ESLint config with custom rules for coding standards enforcement",
   "type": "module",
@@ -21,6 +21,6 @@
   "repository": {
     "type": "git",
     "url": "https://github.com/zypin-selenium/zypin",
-    "directory": "packages/eslint-config-standards"
+    "directory": "packages/linter"
   }
 }
