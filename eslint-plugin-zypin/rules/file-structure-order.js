@@ -44,8 +44,10 @@ export default {
         node.declarations[0]?.id?.name &&
         /^[A-Z_]+$/.test(node.declarations[0].id.name)
       ) {
+        // This is a standalone constant (not part of export)
         constantIndices.push(index);
-      } else if (node.type === 'ExportNamedDeclaration' && !node.declaration) {
+      } else if (node.type === 'ExportNamedDeclaration') {
+        // Track ALL exports (with or without declaration)
         exportIndices.push(index);
       } else if (
         node.type === 'FunctionDeclaration' &&
