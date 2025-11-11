@@ -9,7 +9,7 @@ const execPromise = promisify(exec);
 
 export const checkJava = _checkJava;
 export const downloadSeleniumServer = _downloadSeleniumServer;
-export const getSeleniumServerPath = _getSeleniumServerPath;
+export const getServerPath = _getServerPath;
 export const getCacheDir = _getCacheDir;
 
 // Implementation
@@ -31,13 +31,13 @@ async function _checkJava() {
   }
 }
 
-function _getSeleniumServerPath() {
+function _getServerPath() {
   const cacheDir = _getCacheDir();
   return join(cacheDir, 'selenium-server-4.38.0.jar');
 }
 
 async function _downloadSeleniumServer() {
-  const jarPath = _getSeleniumServerPath();
+  const jarPath = _getServerPath();
 
   if (existsSync(jarPath)) {
     return jarPath; // Already cached
