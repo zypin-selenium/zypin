@@ -1,6 +1,5 @@
 import js from '@eslint/js';
-import importPlugin from 'eslint-plugin-import';
-import zypinPlugin from './eslint-plugin-zypin/index.js';
+import standardsPlugin from './eslint-plugin-standards/index.js';
 
 export default [
   js.configs.recommended,
@@ -32,8 +31,7 @@ export default [
       },
     },
     plugins: {
-      import: importPlugin,
-      zypin: zypinPlugin,
+      standards: standardsPlugin,
     },
     rules: {
       'no-var': 'error',
@@ -70,20 +68,6 @@ export default [
           capIsNew: true,
         },
       ],
-      'import/order': [
-        'error',
-        {
-          groups: ['builtin', 'external', 'internal', 'parent', 'sibling', 'index'],
-          'newlines-between': 'never',
-          alphabetize: {
-            order: 'asc',
-            caseInsensitive: true,
-          },
-        },
-      ],
-      'import/no-duplicates': 'error',
-      'import/first': 'error',
-      'import/newline-after-import': 'error',
       'no-multiple-empty-lines': [
         'error',
         {
@@ -102,10 +86,10 @@ export default [
         },
       ],
       semi: ['error', 'always'],
-      // Custom Zypin rules
-      'zypin/file-structure-order': 'error',
-      'zypin/export-pattern': 'error',
-      'zypin/function-naming': 'error',
+      // Custom rules
+      'standards/file-structure-order': 'error',
+      'standards/export-pattern': 'error',
+      'standards/function-naming': 'error',
     },
   },
 ];
