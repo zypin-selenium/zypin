@@ -3,11 +3,11 @@ import chrome from 'selenium-webdriver/chrome.js';
 import firefox from 'selenium-webdriver/firefox.js';
 import edge from 'selenium-webdriver/edge.js';
 
-export { createBrowser };
+export const createBrowser = _createBrowser;
 
 // Implementation
 
-async function createBrowser(options = {}) {
+async function _createBrowser(options = {}) {
   const {
     browser = 'chrome',
     serverUrl = process.env.SELENIUM_SERVER_URL || 'http://localhost:8444',

@@ -1,6 +1,6 @@
 {
   "name": "@zypin-selenium/zypin",
-  "version": "0.1.8",
+  "version": "0.1.9",
   "type": "module",
   "scripts": {
     "generate": "zypin generate",
@@ -10,7 +10,7 @@
     "tests/*"
   ],
   "dependencies": {
-    "@zypin-selenium/cli": "^0.1.6"
+    "@zypin-selenium/cli": "^0.1.7"
   },
   "bin": {
     "zypin": "./node_modules/@zypin-selenium/cli/index.js"

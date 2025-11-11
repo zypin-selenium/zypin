@@ -8,12 +8,12 @@ import { select, input } from '@inquirer/prompts';
 
 const activeProcesses = new Set();
 
-export const CLI = _CLI;
+export { CLI };
 export const spawn = _spawn;
 
 // Implementation
 
-class _CLI {
+class CLI {
   constructor(name, description, version) {
     this.program = new Command();
     this.program.name(name).description(description).version(version);
@@ -186,7 +186,7 @@ function _spawn(command, args, options = {}) {
   });
 }
 
-function _createTask(title, fn, options, concurrent) {
+const _createTask = (title, fn, options, concurrent) => {
   return {
     title,
     task: async (_, listrTask) => {
@@ -201,7 +201,7 @@ function _createTask(title, fn, options, concurrent) {
   };
 }
 
-function _resolveCommand(command) {
+const _resolveCommand = (command) => {
   if (['npm', 'node', 'npx'].includes(command)) return [command, []];
 
   const localBin = join(process.cwd(), 'node_modules', '.bin', command);
