@@ -1,6 +1,5 @@
 {
   "name": "zypin",
-  "version": "0.1.0",
   "private": true,
   "workspaces": [
     "packages/*"
@@ -10,7 +9,7 @@
   },
   "scripts": {
     "prepare": "husky",
-    "lint": "npx -w @zypin-selenium/linter eslint . --ext .js",
-    "lint:fix": "npx -w @zypin-selenium/linter eslint . --ext .js --fix"
+    "lint": "npm run lint -w @zypin-selenium/linter",
+    "lint:fix": "npm run lint:fix -w @zypin-selenium/linter"
   }
 }

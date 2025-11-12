@@ -6,5 +6,9 @@
   "main": "index.js",
   "dependencies": {
     "eslint": "^9.39.1"
+  },
+  "scripts": {
+    "lint": "eslint $INIT_CWD --ext .js",
+    "lint:fix": "eslint $INIT_CWD --ext .js --fix"
   }
 }
