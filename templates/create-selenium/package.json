@@ -1,0 +1,9 @@
+{
+  "name": "@zypin-selenium/create-selenium",
+  "version": "1.0.2",
+  "type": "module",
+  "bin": "node_modules/@zypin-selenium/cli/index.js",
+  "dependencies": {
+    "@zypin-selenium/selenium": "^1.0.2"
+  }
+}

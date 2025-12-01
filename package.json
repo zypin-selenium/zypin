@@ -1,0 +1,11 @@
+{
+  "name": "zypin-selenium",
+  "private": true,
+  "workspaces": [
+    "packages/*"
+  ],
+  "type": "module",
+  "scripts": {
+    "postinstall": "node scripts/release.js setup"
+  }
+}
