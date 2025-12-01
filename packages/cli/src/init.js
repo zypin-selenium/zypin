@@ -5,18 +5,14 @@ import { fileURLToPath } from 'url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
-export async function initTemplate(folderName) {
-  const templateInfo = detectTemplate();
-  const cliVersion = getCliVersion();
-  checkVersionCompatibility(cliVersion, templateInfo.version);
-
-  const isZypinTemplate = templateInfo.name === '@zypin-selenium/create-zypin';
-  isZypinTemplate ? await initZypinTemplate(templateInfo, folderName) : await initSubTemplate(templateInfo, folderName);
-}
-
 export function detectTemplate() {
+  const scriptName = basename(process.argv[1]);
+  if (!scriptName.startsWith('create-')) return null;
+
   try {
-    const templatePackageJsonPath = join(__dirname, '../../../package.json');
+    // Templates are sibling packages due to npm hoisting
+    // cli/src/init.js -> ../../{template-name}/package.json
+    const templatePackageJsonPath = join(__dirname, `../../${scriptName}/package.json`);
     const templatePackageJson = JSON.parse(readFileSync(templatePackageJsonPath, 'utf-8'));
     const templateDir = dirname(templatePackageJsonPath);
     return { name: templatePackageJson.name, version: templatePackageJson.version, path: templateDir };
@@ -26,25 +22,11 @@ export function detectTemplate() {
   }
 }
 
-export function getCliVersion() {
-  try {
-    const cliPackageJsonPath = join(__dirname, '../package.json');
-    const cliPackageJson = JSON.parse(readFileSync(cliPackageJsonPath, 'utf-8'));
-    return cliPackageJson.version;
-  } catch (error) {
-    console.error('Error: Unable to read CLI version');
-    process.exit(1);
-  }
+export async function initTemplate(folderName, templateInfo) {
+  const isZypinTemplate = templateInfo.name === '@zypin-selenium/create-zypin';
+  isZypinTemplate ? await initZypinTemplate(templateInfo, folderName) : await initSubTemplate(templateInfo, folderName);
 }
 
-export function checkVersionCompatibility(cliVersion, templateVersion) {
-  const cliMajor = parseInt(cliVersion.split('.')[0]);
-  const templateMajor = parseInt(templateVersion.split('.')[0]);
-  if (cliMajor < templateMajor) {
-    console.error(`CLI version ${cliVersion} is not compatible with template version ${templateVersion}`);
-    process.exit(1);
-  }
-}
 
 async function initZypinTemplate(templateInfo, folderName) {
   if (!folderName) {
