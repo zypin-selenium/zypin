@@ -1,4 +1,4 @@
-import { readFileSync, existsSync, writeFileSync, readdirSync, mkdirSync } from 'fs';
+import { readFileSync, existsSync, writeFileSync, readdirSync, mkdirSync, renameSync } from 'fs';
 import { copy } from 'fs-extra';
 import { dirname, join, basename } from 'path';
 import { fileURLToPath } from 'url';
@@ -109,6 +109,9 @@ async function copyTemplate(templateInfo, targetDir) {
     await copy(sourcePath, targetPath);
     console.log(`✓ Copied: ${file}`);
   }
+
+  const gitignorePath = join(targetDir, 'gitignore'), dotGitignorePath = join(targetDir, '.gitignore');
+  existsSync(gitignorePath) && renameSync(gitignorePath, dotGitignorePath);
 }
 
 async function cleanupPackageJson(targetDir, folderName) {

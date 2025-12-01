@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { readFileSync, writeFileSync, existsSync, readdirSync } from 'fs';
+import { readFileSync, writeFileSync, existsSync, readdirSync, renameSync } from 'fs';
 import { join, dirname } from 'path';
 import { execSync } from 'child_process';
 import { fileURLToPath } from 'url';
@@ -87,11 +87,21 @@ function publishToNpm() {
   const templates = toPublish.filter(p => p.includes('templates/')).sort();
 
   for (const pkg of [...packages, ...templates]) {
+    const isTemplate = pkg.includes('templates/');
+    const gitignorePath = join(pkg, '.gitignore'), renamedPath = join(pkg, 'gitignore');
+
     try {
       console.log(`Publishing: ${pkg}`);
+
+      isTemplate && existsSync(gitignorePath) && renameSync(gitignorePath, renamedPath);
+
       execSync('npm publish --access public', { cwd: pkg, stdio: 'inherit', env: { ...process.env, NODE_AUTH_TOKEN: process.env.NPM_TOKEN } });
+
+      isTemplate && existsSync(renamedPath) && renameSync(renamedPath, gitignorePath);
+
       console.log(`✓ Published: ${pkg}`);
     } catch (error) {
+      isTemplate && existsSync(renamedPath) && renameSync(renamedPath, gitignorePath);
       console.error(`✗ Failed to publish ${pkg}: ${error.message}`);
     }
   }
