@@ -1,9 +1,10 @@
 {
   "name": "@zypin-selenium/create-bdd",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "type": "module",
   "bin": "node_modules/@zypin-selenium/cli/index.js",
   "dependencies": {
+    "@zypin-selenium/cli": "^1.0.8",
     "@zypin-selenium/selenium-bdd": "^1.0.2"
   }
 }

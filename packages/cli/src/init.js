@@ -43,7 +43,7 @@ async function initZypinTemplate(templateInfo, folderName) {
 
   mkdirSync(targetDir, { recursive: true });
   await copyTemplate(templateInfo, targetDir);
-  await cleanupPackageJson(targetDir, folderName);
+  await cleanupPackageJson(targetDir, folderName, true);
   console.log('\nTemplate initialized successfully!');
   console.log(`Next: cd ${folderName} && npm install\n`);
 }
@@ -70,7 +70,7 @@ async function initSubTemplate(templateInfo, folderName) {
 
   mkdirSync(targetDir, { recursive: true });
   await copyTemplate(templateInfo, targetDir);
-  await cleanupPackageJson(targetDir, folderName);
+  await cleanupPackageJson(targetDir, folderName, false);
   console.log('\nTemplate initialized successfully!');
   console.log('Next: npm install\n');
 }
@@ -96,7 +96,7 @@ async function copyTemplate(templateInfo, targetDir) {
   existsSync(gitignorePath) && renameSync(gitignorePath, dotGitignorePath);
 }
 
-async function cleanupPackageJson(targetDir, folderName) {
+async function cleanupPackageJson(targetDir, folderName, isMainTemplate) {
   const packageJsonPath = join(targetDir, 'package.json');
   if (!existsSync(packageJsonPath)) return console.warn('Warning: package.json not found in template');
 
@@ -105,8 +105,10 @@ async function cleanupPackageJson(targetDir, folderName) {
   pkg.name = folderName;
 
   if (pkg.dependencies && pkg.dependencies['@zypin-selenium/cli']) {
-    pkg.devDependencies = pkg.devDependencies || {};
-    pkg.devDependencies['@zypin-selenium/cli'] = pkg.dependencies['@zypin-selenium/cli'];
+    if (isMainTemplate) {
+      pkg.devDependencies = pkg.devDependencies || {};
+      pkg.devDependencies['@zypin-selenium/cli'] = pkg.dependencies['@zypin-selenium/cli'];
+    }
     delete pkg.dependencies['@zypin-selenium/cli'];
   }
 

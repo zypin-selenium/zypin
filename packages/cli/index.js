@@ -7,11 +7,15 @@ import { runTests } from './src/test.js';
 const program = new Command();
 const templateInfo = detectTemplate();
 
+// Template initialization mode (low priority - rarely updated)
 if (templateInfo) {
   program.name(templateInfo.name).description(`Initialize ${templateInfo.name} template`).argument('[folder]', 'Folder name').action((folder) => initTemplate(folder, templateInfo));
-} else {
-  program.name('zypin').description('Zypin Selenium CLI');
-  program.command('test [path]').description('Run tests').action(runTests);
+  program.parse();
+  process.exit(0);
 }
+
+// Main CLI mode (high priority - frequently updated)
+program.name('zypin').description('Zypin Selenium CLI');
+program.command('test [path]').description('Run tests').action(runTests);
 
 program.parse();
