@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 
 import { Command } from 'commander';
-import { readFileSync, existsSync, writeFileSync, readdirSync, mkdirSync, renameSync, cpSync } from 'fs';
+import { readFileSync, existsSync, writeFileSync, readdirSync, mkdirSync, renameSync, cpSync, rmSync } from 'fs';
+import { execSync } from 'child_process';
 import { dirname, join, basename } from 'path';
 import { fileURLToPath } from 'url';
 
@@ -44,7 +45,12 @@ if (scriptName.startsWith('create-')) {
       writeFileSync(pkgPath, JSON.stringify(pkg, null, 2) + '\n');
     }
 
-    console.log(`Created at ${targetDir}`);
+    try {
+      execSync('npm install', { cwd: targetDir, stdio: 'inherit' });
+      console.log(`Created at ${targetDir}`);
+    } catch {
+      rmSync(targetDir, { recursive: true, force: true });
+    }
   }).parse();
 
   process.exit();
