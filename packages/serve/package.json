@@ -1,10 +1,7 @@
 {
   "name": "@zypin-selenium/serve",
-  "version": "1.0.5",
+  "version": "1.0.6",
   "type": "module",
   "main": "index.js",
-  "bin": "./index.js",
-  "dependencies": {
-    "listr2": "^8.3.3"
-  }
+  "bin": "./index.js"
 }
