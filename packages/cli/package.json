@@ -1,13 +1,13 @@
 {
   "name": "@zypin-selenium/cli",
-  "version": "1.0.11",
+  "version": "1.0.12",
   "type": "module",
   "main": "index.js",
   "bin": {
     "zypin": "./index.js",
-    "create-zypin": "./index.js",
-    "create-bdd": "./index.js",
-    "create-selenium": "./index.js"
+    "create-zypin": "./init.js",
+    "create-bdd": "./init.js",
+    "create-selenium": "./init.js"
   },
   "dependencies": {
     "commander": "^14.0.2"

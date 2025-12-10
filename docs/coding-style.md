@@ -379,6 +379,30 @@ if (status === 301) {
 }
 ```
 
+**Advanced: Combining multiple techniques**:
+```javascript
+// Compressed (uses &&, comma operator, ??, ?., nested conditions)
+pkg.dependencies?.['@zypin-selenium/cli'] && (
+  isZypin && ((pkg.devDependencies ??= {})['@zypin-selenium/cli'] = pkg.dependencies['@zypin-selenium/cli']),
+  delete pkg.dependencies['@zypin-selenium/cli'],
+  Object.keys(pkg.dependencies).length === 0 && delete pkg.dependencies
+);
+
+// Not compressed
+if (pkg.dependencies && pkg.dependencies['@zypin-selenium/cli']) {
+  if (isZypin) {
+    if (!pkg.devDependencies) {
+      pkg.devDependencies = {};
+    }
+    pkg.devDependencies['@zypin-selenium/cli'] = pkg.dependencies['@zypin-selenium/cli'];
+  }
+  delete pkg.dependencies['@zypin-selenium/cli'];
+  if (Object.keys(pkg.dependencies).length === 0) {
+    delete pkg.dependencies;
+  }
+}
+```
+
 ### When to Compress
 - ✅ Simple one-liners (if/else with single statement)
 - ✅ Multiple related statements (comma operator)

@@ -1,12 +1,12 @@
 {
   "name": "@zypin-selenium/create-zypin",
-  "version": "1.0.14",
+  "version": "1.0.15",
   "type": "module",
   "bin": "node_modules/@zypin-selenium/cli/index.js",
   "workspaces": [
     "tests/*"
   ],
   "dependencies": {
-    "@zypin-selenium/cli": "^1.0.11"
+    "@zypin-selenium/cli": "^1.0.12"
   }
 }
