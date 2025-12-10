@@ -1,5 +1,4 @@
-import { readFileSync, existsSync, writeFileSync, readdirSync, mkdirSync, renameSync } from 'fs';
-import { copy } from 'fs-extra';
+import { readFileSync, existsSync, writeFileSync, readdirSync, mkdirSync, renameSync, cpSync } from 'fs';
 import { dirname, join, basename } from 'path';
 import { fileURLToPath } from 'url';
 
@@ -88,7 +87,7 @@ async function copyTemplate(templateInfo, targetDir) {
       console.warn(`Warning: ${file} already exists, skipping...`);
       continue;
     }
-    await copy(sourcePath, targetPath);
+    cpSync(sourcePath, targetPath, { recursive: true });
     console.log(`✓ Copied: ${file}`);
   }
 

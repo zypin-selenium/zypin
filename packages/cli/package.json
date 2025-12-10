@@ -1,6 +1,6 @@
 {
   "name": "@zypin-selenium/cli",
-  "version": "1.0.8",
+  "version": "1.0.9",
   "type": "module",
   "main": "index.js",
   "bin": {
@@ -10,7 +10,6 @@
     "create-selenium": "./index.js"
   },
   "dependencies": {
-    "commander": "^14.0.2",
-    "fs-extra": "^11.3.2"
+    "commander": "^14.0.2"
   }
 }
