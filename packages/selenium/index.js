@@ -29,12 +29,12 @@ export async function createDriver(browserName = 'chrome', options = null) {
     req.on('error', () => r(false)), req.on('timeout', () => (req.destroy(), r(false)));
   });
 
-  await checkGrid() || (spawn('npx', ['@zypin-selenium/serve', '--no-tunnel'], { stdio: 'ignore' }), await new Promise((r, j) => {
+  await checkGrid() || (spawn('npx', ['-y', '@zypin-selenium/serve', '--no-tunnel'], { stdio: 'ignore' }), await new Promise((r, j) => {
     const startTime = Date.now(), maxWait = 30000, check = async () => (await checkGrid() ? r() : Date.now() - startTime > maxWait ? j(new Error('failed to start grid')) : setTimeout(check, 1000));
     check();
   }));
 
   const builder = new Builder().forBrowser(browserName).usingServer(GRID_URL);
-  options && builder[{chrome:'setChromeOptions',firefox:'setFirefoxOptions',edge:'setEdgeOptions',safari:'setSafariOptions'}[browserName.toLowerCase()]](options);
+  options && builder[{ chrome: 'setChromeOptions', firefox: 'setFirefoxOptions', edge: 'setEdgeOptions', safari: 'setSafariOptions' }[browserName.toLowerCase()]](options);
   return builder.build();
 }
