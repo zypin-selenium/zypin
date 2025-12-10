@@ -44,7 +44,7 @@ if (scriptName.startsWith('create-')) {
       writeFileSync(pkgPath, JSON.stringify(pkg, null, 2) + '\n');
     }
 
-    isZypin ? console.log(`cd ${f} && npm install`) : console.log('npm install');
+    console.log(`Created at ${targetDir}`);
   }).parse();
 
   process.exit();
