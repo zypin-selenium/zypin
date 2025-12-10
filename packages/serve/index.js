@@ -6,7 +6,9 @@ import { fileURLToPath } from 'url';
 import { homedir } from 'os';
 import { spawn, execSync } from 'child_process';
 
-const __dirname = dirname(fileURLToPath(import.meta.url)), JAR_PATH = join(__dirname, 'lib', 'selenium-server-4.38.0.jar'), LOG_DIR = join(homedir(), '.zypin', 'logs'), PORT = 4444;
+process.on('uncaughtException', (err) => (console.error(`✗ failed, ${err.message}`), process.exit(1)));
+
+const __dirname = dirname(fileURLToPath(import.meta.url)), JAR_PATH = join(__dirname, 'lib', 'selenium-server-4.38.0.jar'), LOG_DIR = join(homedir(), '.zypin', 'logs'), PORT = 4444, noTunnel = process.argv.includes('--no-tunnel');
 
 await task('checking requirements...', (resolve, reject) => {
   !existsSync(LOG_DIR) && mkdirSync(LOG_DIR, { recursive: true });
@@ -20,13 +22,11 @@ await task('starting grid...', (resolve, reject) => {
   gridChild.stdout.on('data', (data) => data.toString().includes('Started Selenium') && resolve(`grid at http://localhost:${PORT}`));
 });
 
-await task('starting tunnel...', (resolve, reject) => {
+!noTunnel && await task('starting tunnel...', (resolve, reject) => {
   let tunnelLog = createWriteStream(join(LOG_DIR, 'tunnel.log'), { flags: 'a' }), tunnelChild = spawn('npx', ['-y', 'cloudflared', 'tunnel', '--url', `http://localhost:${PORT}`], { stdio: ['ignore', 'pipe', 'pipe'] });
   tunnelChild.stdout.pipe(tunnelLog), tunnelChild.stderr.pipe(tunnelLog), process.on('exit', () => (tunnelChild && tunnelChild.kill('SIGTERM'), tunnelLog.end()));
   tunnelChild.on('exit', (code) => code !== 0 && code !== null && reject(new Error(`see ${join(LOG_DIR, 'tunnel.log')}`)));
   tunnelChild.stderr.on('data', (data) => ((match) => match && resolve(`tunnel at ${match[1]}`))(data.toString().match(/(https:\/\/[^\s]+\.trycloudflare\.com)/)));
 });
-
-process.on('uncaughtException', (err) => (console.error(`✗ failed, ${err.message}`), process.exit(1)));
 
 function task(title, fn) { return (console.log(title), new Promise(fn).then((msg) => console.log(`✓ ${msg}\n`), (err) => { throw err; })); }
