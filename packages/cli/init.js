@@ -47,7 +47,7 @@ if (scriptName.startsWith('create-')) {
 
     try {
       execSync('npm install', { cwd: targetDir, stdio: 'inherit' });
-      console.log(`\ncreated at ${targetDir}`);
+      console.log(`\n✓ created at ${targetDir}`);
     } catch {
       rmSync(targetDir, { recursive: true, force: true });
     }
