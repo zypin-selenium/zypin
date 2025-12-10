@@ -109,10 +109,10 @@ function cleanupPackageJson(targetDir, folderName, isMainTemplate) {
       pkg.devDependencies['@zypin-selenium/cli'] = pkg.dependencies['@zypin-selenium/cli'];
     }
     delete pkg.dependencies['@zypin-selenium/cli'];
+    if (Object.keys(pkg.dependencies).length === 0) {
+      delete pkg.dependencies;
+    }
   }
-
-  pkg.scripts = pkg.scripts || {};
-  if (!pkg.scripts.test) pkg.scripts.test = 'zypin test';
 
   writeFileSync(packageJsonPath, JSON.stringify(pkg, null, 2) + '\n');
   console.log('\n✓ Updated package.json');
