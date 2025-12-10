@@ -21,13 +21,13 @@ export function detectTemplate() {
   }
 }
 
-export async function initTemplate(folderName, templateInfo) {
+export function initTemplate(folderName, templateInfo) {
   const isZypinTemplate = templateInfo.name === '@zypin-selenium/create-zypin';
-  isZypinTemplate ? await initZypinTemplate(templateInfo, folderName) : await initSubTemplate(templateInfo, folderName);
+  isZypinTemplate ? initZypinTemplate(templateInfo, folderName) : initSubTemplate(templateInfo, folderName);
 }
 
 
-async function initZypinTemplate(templateInfo, folderName) {
+function initZypinTemplate(templateInfo, folderName) {
   if (!folderName) {
     console.error('Error: Folder name is required');
     console.error('Usage: npx @zypin-selenium/create-zypin <folder-name>');
@@ -41,13 +41,13 @@ async function initZypinTemplate(templateInfo, folderName) {
   }
 
   mkdirSync(targetDir, { recursive: true });
-  await copyTemplate(templateInfo, targetDir);
-  await cleanupPackageJson(targetDir, folderName, true);
+  copyTemplate(templateInfo, targetDir);
+  cleanupPackageJson(targetDir, folderName, true);
   console.log('\nTemplate initialized successfully!');
   console.log(`Next: cd ${folderName} && npm install\n`);
 }
 
-async function initSubTemplate(templateInfo, folderName) {
+function initSubTemplate(templateInfo, folderName) {
   const testsDir = join(process.cwd(), 'tests');
   if (!existsSync(testsDir)) {
     console.error('Error: Not a zypin project (tests/ folder not found)');
@@ -68,13 +68,13 @@ async function initSubTemplate(templateInfo, folderName) {
   }
 
   mkdirSync(targetDir, { recursive: true });
-  await copyTemplate(templateInfo, targetDir);
-  await cleanupPackageJson(targetDir, folderName, false);
+  copyTemplate(templateInfo, targetDir);
+  cleanupPackageJson(targetDir, folderName, false);
   console.log('\nTemplate initialized successfully!');
   console.log('Next: npm install\n');
 }
 
-async function copyTemplate(templateInfo, targetDir) {
+function copyTemplate(templateInfo, targetDir) {
   const sourceDir = templateInfo.path;
   console.log(`\nCopying template files from ${templateInfo.name}...\n`);
   const files = readdirSync(sourceDir);
@@ -95,7 +95,7 @@ async function copyTemplate(templateInfo, targetDir) {
   existsSync(gitignorePath) && renameSync(gitignorePath, dotGitignorePath);
 }
 
-async function cleanupPackageJson(targetDir, folderName, isMainTemplate) {
+function cleanupPackageJson(targetDir, folderName, isMainTemplate) {
   const packageJsonPath = join(targetDir, 'package.json');
   if (!existsSync(packageJsonPath)) return console.warn('Warning: package.json not found in template');
 
