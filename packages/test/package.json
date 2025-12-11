@@ -1,6 +1,6 @@
 {
-  "name": "@zypin/test",
-  "version": "1.0.1",
+  "name": "@zypin-selenium/test",
+  "version": "1.0.2",
   "type": "module",
   "main": "index.js"
 }
