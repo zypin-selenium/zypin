@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 
+import { test } from '@zypin-selenium/test';
 import { Command } from 'commander';
 import { readFileSync, existsSync, writeFileSync, readdirSync, mkdirSync, renameSync, cpSync, rmSync } from 'fs';
 import { execSync } from 'child_process';
@@ -8,61 +9,41 @@ import { fileURLToPath } from 'url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const scriptName = basename(process.argv[1]);
+const templatePath = join(__dirname, `../${scriptName}/package.json`);
+const templatePkg = JSON.parse(readFileSync(templatePath, 'utf-8'));
+const templateInfo = { name: templatePkg.name, version: templatePkg.version, path: dirname(templatePath) };
 
-process.on('uncaughtException', (err) => (console.error(`✗ failed, ${err.message}`), process.exit(1)));
+new Command().name(templateInfo.name).argument('<folder>').action(async f => {
+  const isZypin = templateInfo.name === '@zypin-selenium/create-zypin';
+  test(isZypin ? 'Zypin project should create' : 'Template should create', async ({ test, ok, doesNotThrow }) => {
+    let testsDir;
+    const targetDir = isZypin ? join(process.cwd(), f) : (ok(existsSync(testsDir = join(process.cwd(), 'tests')), 'Zypin project should exist'), join(testsDir, f));
+    ok(!existsSync(targetDir), 'Folder should not exist');
+    doesNotThrow(() => copyTemplateFiles(templateInfo.path, targetDir), 'Project files should copy');
+    doesNotThrow(() => updatePackageJson(targetDir, f, isZypin), 'Package.json should update');
+    test('Dependencies should install', async ({ doesNotThrow }) =>
+      doesNotThrow(() => { try { execSync('npm install', { cwd: targetDir, stdio: 'ignore' }); } catch (e) { throw (rmSync(targetDir, { recursive: true, force: true }), e); } }, 'Dependencies should install'));
+  });
+}).parse();
 
-if (scriptName.startsWith('create-')) {
-  const templatePath = join(__dirname, `../${scriptName}/package.json`);
-  const templatePkg = JSON.parse(readFileSync(templatePath, 'utf-8'));
-  const templateInfo = { name: templatePkg.name, version: templatePkg.version, path: dirname(templatePath) };
+const copyTemplateFiles = (src, dest) => (
+  mkdirSync(dest, { recursive: true }),
+  readdirSync(src).forEach(file =>
+    !['node_modules', 'package-lock.json'].includes(file) && !existsSync(join(dest, file)) &&
+    cpSync(join(src, file), join(dest, file), { recursive: true })
+  ),
+  existsSync(join(dest, 'gitignore')) && renameSync(join(dest, 'gitignore'), join(dest, '.gitignore'))
+);
 
-  new Command().name(templateInfo.name).argument('<folder>').action(async f => {
-    const isZypin = templateInfo.name === '@zypin-selenium/create-zypin';
-    const targetDir = isZypin ? join(process.cwd(), f) : (() => {
-      const testsDir = join(process.cwd(), 'tests');
-      if (!existsSync(testsDir)) throw Error('not a zypin project');
-      return join(testsDir, f);
-    })();
-
-    if (existsSync(targetDir)) throw Error('folder already exists');
-
-    await task('creating project...', (resolve) => {
-      mkdirSync(targetDir, { recursive: true });
-      readdirSync(templateInfo.path).forEach(file =>
-        !['node_modules', 'package-lock.json'].includes(file) && !existsSync(join(targetDir, file)) &&
-        cpSync(join(templateInfo.path, file), join(targetDir, file), { recursive: true })
-      );
-
-      existsSync(join(targetDir, 'gitignore')) && renameSync(join(targetDir, 'gitignore'), join(targetDir, '.gitignore'));
-
-      const pkgPath = join(targetDir, 'package.json');
-      if (existsSync(pkgPath)) {
-        const pkg = JSON.parse(readFileSync(pkgPath, 'utf-8'));
-        delete pkg.bin;
-        pkg.name = f;
-        pkg.dependencies?.['@zypin-selenium/cli'] && (
-          isZypin && ((pkg.devDependencies ??= {})['@zypin-selenium/cli'] = pkg.dependencies['@zypin-selenium/cli']),
-          delete pkg.dependencies['@zypin-selenium/cli'],
-          Object.keys(pkg.dependencies).length === 0 && delete pkg.dependencies
-        );
-        writeFileSync(pkgPath, JSON.stringify(pkg, null, 2) + '\n');
-      }
-
-      resolve(`project at ${targetDir}`);
-    });
-
-    await task('installing dependencies...', (resolve, reject) => {
-      try {
-        execSync('npm install', { cwd: targetDir, stdio: 'inherit' });
-        resolve('ready to use');
-      } catch (err) {
-        rmSync(targetDir, { recursive: true, force: true });
-        throw err;
-      }
-    });
-  }).parse();
-
-  process.exit();
-}
-
-function task(title, fn) { return (console.log(title), new Promise(fn).then((msg) => console.log(`✓ ${msg}\n`), (err) => { throw err; })); }
+const updatePackageJson = (dir, name, isZypin) => {
+  const p = join(dir, 'package.json');
+  if (!existsSync(p)) return;
+  const pkg = JSON.parse(readFileSync(p, 'utf-8'));
+  delete pkg.bin, pkg.name = name;
+  pkg.dependencies?.['@zypin-selenium/cli'] && (
+    isZypin && ((pkg.devDependencies ??= {})['@zypin-selenium/cli'] = pkg.dependencies['@zypin-selenium/cli']),
+    delete pkg.dependencies['@zypin-selenium/cli'],
+    Object.keys(pkg.dependencies).length === 0 && delete pkg.dependencies
+  );
+  writeFileSync(p, JSON.stringify(pkg, null, 2) + '\n');
+};

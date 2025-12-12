@@ -91,7 +91,7 @@ class TAPRunner {
     e.expected !== undefined && console.log(`${sp}expected: ${JSON.stringify(e.expected)}`),
     e.actual !== undefined && console.log(`${sp}actual: ${JSON.stringify(e.actual)}`);
     if (e.stack) {
-      const st = e.stack.split('\n').slice(1).filter(l => l.includes(' at ') && !l.includes('node_modules/') && !l.includes('node:internal')).slice(0, 5);
+      const st = e.stack.split('\n').slice(1).filter(l => l.includes(' at ') && !l.includes('node_modules/') && !l.includes('node:internal') && !l.includes('node:assert')).slice(0, 5);
       st.length && (console.log(`${sp}stack: |`), st.forEach(l => console.log(`${sp}  ${l}`)));
     }
     console.log(`${sp}...`);

@@ -413,8 +413,91 @@ if (pkg.dependencies && pkg.dependencies['@zypin-selenium/cli']) {
 
 ## Testing
 
-Testing strategy will be defined later. For MVP, focus on:
-- Manual testing during development
+### Test Pattern
+
+All tests must follow the pattern: `<Subject> should <verb>`
+
+**Key principles:**
+- Use simple English
+- Use active voice (avoid passive)
+- Avoid unnecessary words like "successfully", "without errors"
+- Test titles and assertion messages should be self-explanatory about what code is doing
+
+✅ Good:
+```javascript
+test('Grid should start', async ({ ok, doesNotReject }) => {
+  ok(gridProcess = spawn(...), 'Grid process should spawn');
+  ok(logFile = createWriteStream(...), 'Grid should create log file');
+  await doesNotReject(() => waitForStartup(), 'Grid should start');
+});
+
+test('Dependencies should install', async ({ doesNotThrow }) => {
+  doesNotThrow(() => execSync('npm install'), 'Dependencies should install');
+});
+
+test('Requirements should pass', async ({ ok }) => {
+  ok(existsSync(logDir), 'Log directory should exist');
+  ok(javaExists(), 'Java should exist');
+});
+```
+
+❌ Bad:
+```javascript
+// Passive voice
+test('Grid should be started successfully', async ({ ok }) => {
+  ok(started, 'Grid should be started without errors');
+});
+
+// Starting with "should"
+test('Should start the grid', async ({ ok }) => {
+  ok(started, 'Should start successfully');
+});
+
+// Unnecessary words
+test('Grid should start successfully', async ({ ok }) => {
+  ok(started, 'Grid should be created without any errors');
+});
+```
+
+### Test Titles
+
+Keep test titles concise and descriptive:
+
+```javascript
+// Good - clear subject and action
+test('Grid should start', async ({ ok }) => { /* ... */ });
+test('Tunnel should start', async ({ ok }) => { /* ... */ });
+test('Requirements should pass', async ({ ok }) => { /* ... */ });
+
+// Bad - passive voice
+test('Grid should be started', async ({ ok }) => { /* ... */ });
+test('Requirements should be satisfied', async ({ ok }) => { /* ... */ });
+
+// Bad - no subject
+test('Should start grid', async ({ ok }) => { /* ... */ });
+```
+
+### Assertion Messages
+
+Assertion messages should describe what the code is checking:
+
+```javascript
+// Good - describes the check
+ok(existsSync(dir), 'Log directory should exist');
+ok(process.spawn(...), 'Grid process should spawn');
+doesNotThrow(() => exec('java -version'), 'Java should exist');
+
+// Bad - passive voice or verbose
+ok(existsSync(dir), 'Log directory should be created');
+ok(process.spawn(...), 'Grid process should be spawned successfully');
+doesNotThrow(() => exec('java -version'), 'Java should be installed without errors');
+```
+
+### Testing Strategy
+
+For production code:
+- Use `@zypin-selenium/test` framework
+- Keep tests focused and isolated
 - Clear, testable function boundaries
 - Minimal side effects
 
@@ -434,3 +517,5 @@ When writing code, ensure:
 - [ ] Self-documenting code with minimal comments
 - [ ] Appropriate file organization (don't over-split)
 - [ ] User-friendly console output
+- [ ] Test pattern: `<Subject> should <verb>` with simple English
+- [ ] Avoid passive voice and unnecessary words in tests
