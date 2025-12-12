@@ -43,17 +43,19 @@ class TAPRunner {
     const ctx = { test: (n, f, o) => childQueue.push({n, f, o}) };
 
     Object.getOwnPropertyNames(assert).filter(m => typeof assert[m] === 'function' && m !== 'AssertionError').forEach(m =>
-      ctx[m] = (...a) => {
+      ctx[m] = async (...a) => {
         if (done) return;
-        const now = performance.now(), msg = (m === 'ok' || m === 'fail') ? (a[1] || m) : (a[2] || a[1] || m),
-              time = Math.max(0.01, now - lastAssertEnd).toFixed(2);
+        const msg = (m === 'ok' || m === 'fail') ? (a[1] || m) : (a[2] || a[1] || m);
         try {
-          assert[m](...a), console.log(`${nextIndent}ok ${++count} - ${typeof msg === 'string' ? msg : m} # time=${time}ms`);
+          await assert[m](...a);
+          const now = performance.now(), time = Math.max(0.01, now - lastAssertEnd).toFixed(2);
+          console.log(`${nextIndent}ok ${++count} - ${typeof msg === 'string' ? msg : m} # time=${time}ms`),
+          lastAssertEnd = now;
         } catch (e) {
+          const now = performance.now(), time = Math.max(0.01, now - lastAssertEnd).toFixed(2);
           console.log(`${nextIndent}not ok ${++count} - ${typeof msg === 'string' ? msg : m} # time=${time}ms`),
-          this.yaml(e, nextIndent + '  '), passed = false;
+          this.yaml(e, nextIndent + '  '), passed = false, lastAssertEnd = now;
         }
-        lastAssertEnd = now;
       }
     );
 
@@ -80,7 +82,11 @@ class TAPRunner {
   }
 
   yaml(e, sp) {
-    console.log(`${sp}---`), console.log(`${sp}message: '${(e.message || '').replace(/'/g, '"')}'`),
+    const msg = e.message || '';
+    console.log(`${sp}---`),
+    msg.includes('\n')
+      ? (console.log(`${sp}message: |`), msg.split('\n').forEach(l => console.log(`${sp}  ${l}`)))
+      : console.log(`${sp}message: '${msg.replace(/'/g, '"')}'`),
     e.operator && console.log(`${sp}operator: ${e.operator}`),
     e.expected !== undefined && console.log(`${sp}expected: ${JSON.stringify(e.expected)}`),
     e.actual !== undefined && console.log(`${sp}actual: ${JSON.stringify(e.actual)}`);
