@@ -43,10 +43,11 @@ function detectAndBump() {
     bumpVersion(pkg);
     bumped.push(pkg);
 
-    const dependentTemplates = findDependentTemplates(pkg);
-    for (const tpl of dependentTemplates) {
-      changedTemplates.add(tpl);
-      updateDependency(tpl, pkg);
+    const dependents = findDependents(pkg);
+    for (const dep of dependents) {
+      if (dep.startsWith('packages/')) changedPackages.add(dep);
+      else changedTemplates.add(dep);
+      updateDependency(dep, pkg);
     }
   }
 
@@ -117,25 +118,27 @@ function bumpVersion(pkgPath) {
   writeFileSync(pkgJsonPath, JSON.stringify(pkg, null, 2) + '\n');
 }
 
-function findDependentTemplates(pkgPath) {
+function findDependents(pkgPath) {
   const pkgJson = JSON.parse(readFileSync(join(rootDir, pkgPath, 'package.json'), 'utf-8'));
   const pkgName = pkgJson.name;
-  const templates = [];
+  const dependents = [];
 
-  const templatesDir = join(rootDir, 'templates');
-  if (!existsSync(templatesDir)) return templates;
+  for (const dir of ['packages', 'templates']) {
+    const dirPath = join(rootDir, dir);
+    if (!existsSync(dirPath)) continue;
 
-  for (const entry of readdirSync(templatesDir, { withFileTypes: true })) {
-    if (!entry.isDirectory()) continue;
-    const tplPkgPath = join(templatesDir, entry.name, 'package.json');
-    if (!existsSync(tplPkgPath)) continue;
+    for (const entry of readdirSync(dirPath, { withFileTypes: true })) {
+      if (!entry.isDirectory()) continue;
+      const depPkgPath = join(dirPath, entry.name, 'package.json');
+      if (!existsSync(depPkgPath)) continue;
 
-    const tplPkg = JSON.parse(readFileSync(tplPkgPath, 'utf-8'));
-    const deps = { ...tplPkg.dependencies, ...tplPkg.devDependencies };
-    deps[pkgName] && templates.push(`templates/${entry.name}`);
+      const depPkg = JSON.parse(readFileSync(depPkgPath, 'utf-8'));
+      const deps = { ...depPkg.dependencies, ...depPkg.devDependencies }, depPath = `${dir}/${entry.name}`;
+      deps[pkgName] && depPath !== pkgPath && dependents.push(depPath);
+    }
   }
 
-  return templates;
+  return dependents;
 }
 
 function updateDependency(tplPath, pkgPath) {
