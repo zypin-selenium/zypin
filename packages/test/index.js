@@ -3,12 +3,11 @@ import { performance } from 'node:perf_hooks';
 
 const tests = [];
 /**
- * Create a TAP test case with infinite nesting support
  * @typedef {(name: string, fn: TestFunction, options?: {skip?: boolean, timeout?: number}) => void} TestMethod
  * @typedef {(ctx: {test: TestMethod} & import('assert')) => void | Promise<void>} TestFunction
- * @param {string} n - Test name
- * @param {TestFunction} f - Test function receives context with test() and all assert methods
- * @param {{skip?: boolean, timeout?: number}} [o] - Options (skip test or set timeout in ms, default 30min)
+ * @param {string} n
+ * @param {TestFunction} f
+ * @param {{skip?: boolean, timeout?: number}} [o]
  */
 export const test = (n, f, o) => tests.push({ n, f, o });
 global.test = test;
