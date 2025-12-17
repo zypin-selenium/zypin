@@ -19,6 +19,11 @@ This document outlines the coding conventions and style guidelines for the zypin
 - Users shouldn't need config files for basic usage
 - Smart defaults over configuration options
 
+### 4. No Empty Lines
+- **Do not use empty lines** to separate code sections
+- Use comments (e.g., `// Section Name`) to group related logic instead
+- Code should be dense but organized via comments
+
 ## Code Organization
 
 ### Hoist Rule
@@ -28,12 +33,10 @@ Use `// Implement` comment to separate execution code from function definitions.
 ✅ Good:
 ```javascript
 #!/usr/bin/env node
-
 import { someFunction } from './module.js';
-
+// Execution
 const result = someFunction();
 console.log(result);
-
 // Implement
 function someFunction() {
   return 'result';
@@ -548,3 +551,4 @@ When writing code, ensure:
 - [ ] User-friendly console output
 - [ ] Test pattern: `<Subject> should <verb>` with simple English
 - [ ] Avoid passive voice and unnecessary words in tests
+- [ ] No empty lines (use comments to separate sections)
