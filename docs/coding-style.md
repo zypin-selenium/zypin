@@ -411,6 +411,35 @@ if (pkg.dependencies && pkg.dependencies['@zypin-selenium/cli']) {
 - ❌ Complex logic that becomes hard to read
 - ❌ Error handling with multiple conditions
 
+### Extreme Optimization (All-in-One Data Flow)
+
+For complex logic involving multiple file operations and dependencies, prefer an "All-in-One" approach:
+1.  **Single Source of Truth**: Load all necessary data into memory once.
+2.  **In-Memory Mutation**: Process all logic on in-memory objects.
+3.  **Deferred I/O**: Perform write operations only at the very end, wrapped in assertions.
+
+**Example (Version Bumping):**
+
+```javascript
+// Load all workspaces once
+const workspaces = ['packages', 'templates'].flatMap(loadWorkspaces);
+
+// Calculate changes in memory
+const changed = new Set(getGitDiff().map(mapToWorkspace));
+
+// Propagate changes (Mutation)
+changed.forEach(ws => {
+    ws.pkg.version = bump(ws.pkg.version);
+    workspaces.forEach(dep => updateDependencies(dep, ws) && changed.add(dep));
+});
+
+// Verify and Write (Deferred I/O)
+changed.forEach(({ path, pkg }) => test(`${path} should bump`, ({ doesNotThrow }) => (
+    doesNotThrow(() => writeFileSync(path, JSON.stringify(pkg)), 'File should write'),
+    doesNotThrow(() => execSync(`git add ${path}`), 'Git add should succeed')
+)));
+```
+
 ## Testing
 
 ### Test Pattern
