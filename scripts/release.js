@@ -1,153 +1,89 @@
 #!/usr/bin/env node
+
+import { test } from '@zypin-selenium/test';
 import { readFileSync, writeFileSync, existsSync, readdirSync, renameSync } from 'fs';
 import { join, dirname } from 'path';
 import { execSync } from 'child_process';
 import { fileURLToPath } from 'url';
 
-const __dirname = dirname(fileURLToPath(import.meta.url));
-const rootDir = join(__dirname, '..');
-const mode = process.argv[2];
+const __dirname = dirname(fileURLToPath(import.meta.url)), rootDir = join(__dirname, '..'), mode = process.argv[2];
 
-if (mode === 'setup') setupGitHook();
-else if (mode === 'bump') detectAndBump();
-else if (mode === 'publish') publishToNpm();
+if (mode === 'setup') test('Git hook should setup', ({ ok, doesNotThrow }) => (
+  doesNotThrow(() => writeFileSync(join(rootDir, '.git', 'hooks', 'pre-commit'), `#!/bin/sh\nnode scripts/release.js bump\n`, { mode: 0o755 }), 'Pre-commit hook should write'),
+  ok(existsSync(join(rootDir, '.git', 'hooks', 'pre-commit')), 'Pre-commit hook should exist')
+));
+else if (mode === 'bump') test('Versions should bump', ({ ok }) => {
+  const changed = execSync('git diff --cached --name-only', { cwd: rootDir, encoding: 'utf-8' }).trim().split('\n').filter(Boolean),
+    changedPackages = new Set(), changedTemplates = new Set(), bumped = [];
+
+  changed.forEach(f => (
+    f.startsWith('packages/') && !f.includes('node_modules') && changedPackages.add(`packages/${f.split('/')[1]}`),
+    f.startsWith('templates/') && !f.includes('node_modules') && changedTemplates.add(`templates/${f.split('/')[1]}`)
+  ));
+
+  changedPackages.forEach(pkg => (
+    bumpVersion(pkg),
+    bumped.push(pkg),
+    findDependents(pkg).forEach(dep => (
+      dep.startsWith('packages/') ? changedPackages.add(dep) : changedTemplates.add(dep),
+      updateDependency(dep, pkg)
+    ))
+  ));
+
+  changedTemplates.forEach(tpl => (bumpVersion(tpl), bumped.push(tpl)));
+
+  ok(bumped.length === 0 || (bumped.forEach(p => execSync(`git add ${p}/package.json`, { cwd: rootDir })), true), `Versions should bump: ${bumped.join(', ')}`);
+});
+else if (mode === 'publish') test('Packages should publish', ({ ok, doesNotThrow }) => {
+  ok(process.env.NPM_TOKEN, 'NPM_TOKEN should exist');
+
+  const lastCommit = execSync('git log -1 --name-only --pretty=format:', { cwd: rootDir, encoding: 'utf-8' }).trim().split('\n').filter(Boolean),
+    toPublish = lastCommit.filter(f => f.endsWith('package.json') && (f.startsWith('packages/') || f.startsWith('templates/'))).map(f => join(rootDir, f.replace('/package.json', ''))),
+    packages = toPublish.filter(p => p.includes('packages/')).sort(),
+    templates = toPublish.filter(p => p.includes('templates/')).sort();
+
+  ok(toPublish.length > 0, `Packages should publish: ${toPublish.length} found`);
+
+  [...packages, ...templates].forEach(pkg => {
+    const isTemplate = pkg.includes('templates/'), gitignorePath = join(pkg, '.gitignore'), renamedPath = join(pkg, 'gitignore');
+    doesNotThrow(() => (
+      isTemplate && existsSync(gitignorePath) && renameSync(gitignorePath, renamedPath),
+      execSync('npm publish --access public', { cwd: pkg, stdio: 'inherit', env: { ...process.env, NODE_AUTH_TOKEN: process.env.NPM_TOKEN } }),
+      isTemplate && existsSync(renamedPath) && renameSync(renamedPath, gitignorePath)
+    ), `Package should publish: ${pkg}`);
+  });
+});
 else console.error('Usage: release.js [setup|bump|publish]'), process.exit(1);
 
-function setupGitHook() {
-  const hookPath = join(rootDir, '.git', 'hooks', 'pre-commit');
-  const hookContent = `#!/bin/sh\nnode scripts/release.js bump\n`;
-  writeFileSync(hookPath, hookContent, { mode: 0o755 });
-  console.log('✓ Pre-commit hook installed');
-}
-
-function detectAndBump() {
-  const changed = execSync('git diff --cached --name-only', { cwd: rootDir, encoding: 'utf-8' })
-    .trim().split('\n').filter(Boolean);
-
-  const changedPackages = new Set(), changedTemplates = new Set();
-
-  for (const file of changed) {
-    if (file.startsWith('packages/') && !file.includes('node_modules')) {
-      const pkg = file.split('/')[1];
-      changedPackages.add(`packages/${pkg}`);
-    }
-    if (file.startsWith('templates/') && !file.includes('node_modules')) {
-      const tpl = file.split('/')[1];
-      changedTemplates.add(`templates/${tpl}`);
-    }
-  }
-
-  const bumped = [];
-
-  for (const pkg of changedPackages) {
-    bumpVersion(pkg);
-    bumped.push(pkg);
-
-    const dependents = findDependents(pkg);
-    for (const dep of dependents) {
-      if (dep.startsWith('packages/')) changedPackages.add(dep);
-      else changedTemplates.add(dep);
-      updateDependency(dep, pkg);
-    }
-  }
-
-  for (const tpl of changedTemplates) {
-    bumpVersion(tpl);
-    bumped.push(tpl);
-  }
-
-  if (bumped.length > 0) {
-    for (const path of bumped) execSync(`git add ${path}/package.json`, { cwd: rootDir });
-    console.log(`✓ Bumped versions: ${bumped.join(', ')}`);
-  }
-}
-
-function publishToNpm() {
-  if (!process.env.NPM_TOKEN) console.error('Error: NPM_TOKEN not set'), process.exit(1);
-
-  const lastCommit = execSync('git log -1 --name-only --pretty=format:', { cwd: rootDir, encoding: 'utf-8' })
-    .trim().split('\n').filter(Boolean);
-
-  const toPublish = [];
-
-  for (const file of lastCommit) {
-    if (file.endsWith('package.json') && (file.startsWith('packages/') || file.startsWith('templates/'))) {
-      const dir = join(rootDir, file.replace('/package.json', ''));
-      toPublish.push(dir);
-    }
-  }
-
-  if (toPublish.length === 0) {
-    console.log('No package.json changes detected in last commit. Nothing to publish.');
-    return;
-  }
-
-  console.log(`Found ${toPublish.length} package(s) to publish`);
-
-  const packages = toPublish.filter(p => p.includes('packages/')).sort();
-  const templates = toPublish.filter(p => p.includes('templates/')).sort();
-
-  for (const pkg of [...packages, ...templates]) {
-    const isTemplate = pkg.includes('templates/');
-    const gitignorePath = join(pkg, '.gitignore'), renamedPath = join(pkg, 'gitignore');
-
-    try {
-      console.log(`Publishing: ${pkg}`);
-
-      isTemplate && existsSync(gitignorePath) && renameSync(gitignorePath, renamedPath);
-
-      execSync('npm publish --access public', { cwd: pkg, stdio: 'inherit', env: { ...process.env, NODE_AUTH_TOKEN: process.env.NPM_TOKEN } });
-
-      isTemplate && existsSync(renamedPath) && renameSync(renamedPath, gitignorePath);
-
-      console.log(`✓ Published: ${pkg}`);
-    } catch (error) {
-      isTemplate && existsSync(renamedPath) && renameSync(renamedPath, gitignorePath);
-      console.error(`✗ Failed to publish ${pkg}: ${error.message}`);
-    }
-  }
-}
+// Implement
 
 function bumpVersion(pkgPath) {
   const pkgJsonPath = join(rootDir, pkgPath, 'package.json');
   if (!existsSync(pkgJsonPath)) return;
-
-  const pkg = JSON.parse(readFileSync(pkgJsonPath, 'utf-8'));
-  const [major, minor, patch] = pkg.version.split('.').map(Number);
-  pkg.version = `${major}.${minor}.${patch + 1}`;
-  writeFileSync(pkgJsonPath, JSON.stringify(pkg, null, 2) + '\n');
+  const pkg = JSON.parse(readFileSync(pkgJsonPath, 'utf-8')), [major, minor, patch] = pkg.version.split('.').map(Number);
+  pkg.version = `${major}.${minor}.${patch + 1}`, writeFileSync(pkgJsonPath, JSON.stringify(pkg, null, 2) + '\n');
 }
 
 function findDependents(pkgPath) {
-  const pkgJson = JSON.parse(readFileSync(join(rootDir, pkgPath, 'package.json'), 'utf-8'));
-  const pkgName = pkgJson.name;
-  const dependents = [];
-
-  for (const dir of ['packages', 'templates']) {
+  const pkgName = JSON.parse(readFileSync(join(rootDir, pkgPath, 'package.json'), 'utf-8')).name, dependents = [];
+  ['packages', 'templates'].forEach(dir => {
     const dirPath = join(rootDir, dir);
-    if (!existsSync(dirPath)) continue;
-
-    for (const entry of readdirSync(dirPath, { withFileTypes: true })) {
-      if (!entry.isDirectory()) continue;
+    existsSync(dirPath) && readdirSync(dirPath, { withFileTypes: true }).forEach(entry => {
+      if (!entry.isDirectory()) return;
       const depPkgPath = join(dirPath, entry.name, 'package.json');
-      if (!existsSync(depPkgPath)) continue;
-
-      const depPkg = JSON.parse(readFileSync(depPkgPath, 'utf-8'));
-      const deps = { ...depPkg.dependencies, ...depPkg.devDependencies }, depPath = `${dir}/${entry.name}`;
+      if (!existsSync(depPkgPath)) return;
+      const depPkg = JSON.parse(readFileSync(depPkgPath, 'utf-8')), deps = { ...depPkg.dependencies, ...depPkg.devDependencies }, depPath = `${dir}/${entry.name}`;
       deps[pkgName] && depPath !== pkgPath && dependents.push(depPath);
-    }
-  }
-
+    });
+  });
   return dependents;
 }
 
 function updateDependency(tplPath, pkgPath) {
-  const pkgJson = JSON.parse(readFileSync(join(rootDir, pkgPath, 'package.json'), 'utf-8'));
-  const tplPkgPath = join(rootDir, tplPath, 'package.json');
-  const tplPkg = JSON.parse(readFileSync(tplPkgPath, 'utf-8'));
-
-  if (tplPkg.dependencies?.[pkgJson.name]) tplPkg.dependencies[pkgJson.name] = `^${pkgJson.version}`;
-  if (tplPkg.devDependencies?.[pkgJson.name]) tplPkg.devDependencies[pkgJson.name] = `^${pkgJson.version}`;
-
-  writeFileSync(tplPkgPath, JSON.stringify(tplPkg, null, 2) + '\n');
+  const pkgJson = JSON.parse(readFileSync(join(rootDir, pkgPath, 'package.json'), 'utf-8')),
+    tplPkgPath = join(rootDir, tplPath, 'package.json'),
+    tplPkg = JSON.parse(readFileSync(tplPkgPath, 'utf-8'));
+  tplPkg.dependencies?.[pkgJson.name] && (tplPkg.dependencies[pkgJson.name] = `^${pkgJson.version}`),
+    tplPkg.devDependencies?.[pkgJson.name] && (tplPkg.devDependencies[pkgJson.name] = `^${pkgJson.version}`),
+    writeFileSync(tplPkgPath, JSON.stringify(tplPkg, null, 2) + '\n');
 }

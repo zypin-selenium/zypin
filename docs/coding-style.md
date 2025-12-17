@@ -23,6 +23,7 @@ This document outlines the coding conventions and style guidelines for the zypin
 
 ### Hoist Rule
 **Functions must be placed at the bottom of the file, execution code at the top.**
+Use `// Implement` comment to separate execution code from function definitions.
 
 ✅ Good:
 ```javascript
@@ -30,11 +31,10 @@ This document outlines the coding conventions and style guidelines for the zypin
 
 import { someFunction } from './module.js';
 
-// Execution code at top
 const result = someFunction();
 console.log(result);
 
-// Functions at bottom
+// Implement
 function someFunction() {
   return 'result';
 }
