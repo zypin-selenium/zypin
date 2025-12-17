@@ -20,7 +20,7 @@ jobs:
 
       - run: npm install
 
-      - run: node scripts/release.js publish
+      - run: node scripts/publish.js
         env:
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

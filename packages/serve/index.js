@@ -33,4 +33,4 @@ await test('Tunnel should start', async ({ ok, doesNotReject }) => {
     tunnelChild.on('exit', (code) => code !== 0 && code !== null && reject(new Error(`Tunnel startup failed (code ${code})\nLogs: ${join(LOG_DIR, 'tunnel.log')}`))),
     tunnelChild.stderr.on('data', (data) => ((match) => match && resolve(`tunnel at ${match[1]}`))(data.toString().match(/(https:\/\/[^\s]+\.trycloudflare\.com)/)))
   )), 'Tunnel should start');
-});
+}, { skip: process.argv.includes('--no-tunnel') });
